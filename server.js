@@ -38,7 +38,8 @@ app.get('/', function(req,res){
 
 // get request - http method.
 // GET /todos - this gets the collection
-// Get /todos?completed=true
+// Get /todos?completed=true&q=house. i.e. we are searching for a string that has 'house' in it. We need _.filter() - returns an array of items that
+// pass a filter test.
 app.get('/todos', function(req,res) {
     var queryParams = req.query; // this is the API request with a query?. Compare to request.params, which is the paramaters.
     var filteredTodos = todos;
@@ -53,7 +54,12 @@ app.get('/todos', function(req,res) {
        filteredTodos =  _.where(filteredTodos, {completed: false});
     }
     
-    
+    //"Go to work on Saturday".indexOf('work') - will return -1 if it doesn't exist, some number if it does exist..
+    if (queryParams.hasOwnProperty('q') && queryParams.q.length >0) {
+        filteredTodos = _.filter(filteredTodos, function(todo){
+            return todo.description.indexOf(queryParams.q) > -1;
+        })
+    }
     res.json(filteredTodos);
 })
 
