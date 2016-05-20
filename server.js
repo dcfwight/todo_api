@@ -92,7 +92,7 @@ app.get('/todos/:id', function(req,res){
 
 // POST/todos
 app.post('/todos', function(req,res){
-    var body = req.body; // i think we needed teh body-parser module to do this.
+    var body = req.body; // we needed the body-parser module to do this.
     // use underscore module to validate entries.
     
     // challenge - use underscore pick to only pick description and completed.
@@ -115,7 +115,23 @@ app.post('/todos', function(req,res){
    
     res.json(body);
     })
-        
+
+// DELETE /todos/id - call app.delete with 2 arguments, the URL and the second is a call back.
+// to delete item from an array - need to find the todo to remove. then use a new underscore method to remove
+// without is the method. Send back a 200 status, and the deleted item.
+app.delete('/todos/:id', function(req,res){
+    var todo_id = parseInt(req.params.id, 10);
+    var matchedTodo = _.findWhere(todos, {id:todo_id});
+    
+    if (!matchedTodo) {
+        res.status(404).json({"error":"no todo found with that id"});
+    } else{
+        todos = _.without(todos, matchedTodo);
+        res.json(matchedTodo); // you don't need to do res.status(200).send, as it does this automatically if
+        // it successfully sends a JSON.
+    }
+});
+
 app.listen(port, function(){
     console.log('express listening on port: '+ port + "!");
 })
