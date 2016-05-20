@@ -116,7 +116,7 @@ app.post('/todos', function(req,res){
     res.json(body);
     })
 
-// DELETE /todos/id - call app.delete with 2 arguments, the URL and the second is a call back.
+// DELETE /todos/:id - call app.delete with 2 arguments, the URL and the second is a call back.
 // to delete item from an array - need to find the todo to remove. then use a new underscore method to remove
 // without is the method. Send back a 200 status, and the deleted item.
 app.delete('/todos/:id', function(req,res){
@@ -131,6 +131,47 @@ app.delete('/todos/:id', function(req,res){
         // it successfully sends a JSON.
     }
 });
+
+// PUT /todos/:id
+app.put('/todos/:id', function(req,res){
+    var todo_id = parseInt(req.params.id, 10);
+    var matchedTodo = _.findWhere(todos, {id:todo_id});
+    var body = _.pick(req.body, 'description', 'completed');
+    var validAttributes = {};
+    
+    if (!matchedTodo) {
+        return res.status(404).send();
+    }
+    
+    // returns true or false, if the object has the property completed.
+    if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
+        validAttributes.completed = body.completed;
+    } else if (body.hasOwnProperty('completed')) {
+        return res.status(400).send(); // there was a problem here - the completed attribute is not a Boolean.
+    } else {
+        // never provided attribute - no problem here. Actually no need for this else clause..
+    }
+    
+    //challenge. check for description. property exists, and its a string and if trimmed value length >0.
+    // elseif - just check if property exists.
+    if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length >0) {
+        validAttributes.description = body.description;
+    } else if (body.hasOwnProperty('description')) {
+        return res.status(400).send();
+    }    
+    // HERE
+    // use _.extend(destination, *sources) - takes all the properties in sources and writes them to destination. It will
+    // overwrite the properties in destination of they are also in sources.
+
+    //matchedTodo = _.extend(matchedTodo, validAttributes);
+    // you actually don't need to do that - you can just do the following:
+    _.extend(matchedTodo, validAttributes); // as you pass in the original matchedTodo, and then do something to it,
+    // it then returns the matchedTodo array.
+    res.json(matchedTodo); // automatically sends back status 200 as well.
+
+});
+
+
 
 app.listen(port, function(){
     console.log('express listening on port: '+ port + "!");
