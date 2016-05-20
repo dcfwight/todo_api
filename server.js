@@ -1,5 +1,10 @@
 var bodyParser = require('body-parser');
 var express = require('express');
+var _ = require('underscore'); // access the underscore package - just use '_' - it is common.
+// very useful for searching arrays etc. See http://underscorejs.org/ for full list of useful commands
+// for example the where function _.where(list, properties), will return an array of ALL the values that contain all of the key-value pairs
+// in that list. e.g. _.where(listOfPlays, {author:'Shakespeare', year:1611});
+// findWhere returns just the first item.
 
 var app = express();
 var port = process.env.PORT || 3000;
@@ -64,6 +69,9 @@ app.get('/todos/:id', function(req,res){
 // note we needed to use parseInt, because req.params is always a string. parseInt second argument is the base - set to 10 usually.
 app.get('/todos/:id', function(req,res){
     var todo_id = parseInt(req.params.id, 10);
+    
+    var matchedTodo = _.findWhere(todos, {id:todo_id});
+    /* Code below works, but we now use the helper function from underscore.
     var matched;
     
     todos.forEach(function(todo){
@@ -71,9 +79,9 @@ app.get('/todos/:id', function(req,res){
             matched = todo;
         }
     });
-    
-    if (matched) {
-        res.json(matched);
+    */
+    if (matchedTodo) {
+        res.json(matchedTodo);
     } else {
         res.status(404).send();
     }
@@ -85,6 +93,22 @@ app.get('/todos/:id', function(req,res){
 // POST/todos
 app.post('/todos', function(req,res){
     var body = req.body; // i think we needed teh body-parser module to do this.
+    // use underscore module to validate entries.
+    
+    // challenge - use underscore pick to only pick description and completed.
+    body = _.pick(body, 'description', 'completed')
+    
+    // logic statement runs if the completed attribute is not a Boolean
+    // also the description has to be a string. String also has to have > 0 length.
+    // if any of the conditions fail, then a status error 400 is returned.
+    if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {  
+        return res.status(400).send();
+    }
+    
+    // set body.description to be trimmed value.
+    body.description = body.description.trim();
+    
+    
     console.log('description' + body.description);
     // challenge - push body into array, after adding ID
     body.id = todoNextId;
