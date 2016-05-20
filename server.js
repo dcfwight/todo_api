@@ -1,12 +1,18 @@
+var bodyParser = require('body-parser');
 var express = require('express');
-var app = express();
 
+var app = express();
 var port = process.env.PORT || 3000;
 // port environment variable set by heroku.
+var todos = []; // set up empty todos array.
+var todoNextId = 1;  //how we iterate over ids.
 
+app.use(bodyParser.json());// now any time a JSON req comes in, express is going to be able to parse it, and access it via req.body.
+
+/* This was the old code -before we changed it so that we can add items to the todo array
 var todos = [{
     id: 1,
-    description: 'meet Mum for lunch',
+    description: 'meet Dad for lunch',
     completed: false
     },{
     id: 2,
@@ -16,7 +22,7 @@ var todos = [{
     id:3,
     description: 'have dinner',
     completed: true
-    }]
+    }]*/
 // this is an array of objects. each needs to have an id. this is called a 'collection'
 // the 'model' is the individual item within a collection.
 
@@ -73,7 +79,21 @@ app.get('/todos/:id', function(req,res){
     }
 })
     
+// POST. This gets data in and updates variables.
+// you need the body-parser module for posts.
 
+// POST/todos
+app.post('/todos', function(req,res){
+    var body = req.body; // i think we needed teh body-parser module to do this.
+    console.log('description' + body.description);
+    // challenge - push body into array, after adding ID
+    body.id = todoNextId;
+    todos.push(body);
+    todoNextId +=1;
+   
+   
+    res.json(todos);
+    })
         
     
     
