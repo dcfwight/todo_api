@@ -107,22 +107,15 @@ app.post('/todos', function(req,res){
     
     // set body.description to be trimmed value.
     body.description = body.description.trim();
-    
-    
-    console.log('description' + body.description);
+     
+    console.log('description: ' + body.description);
     // challenge - push body into array, after adding ID
-    body.id = todoNextId;
+    body.id = todoNextId++; // this sets body.id to todoNextID, THEN it increments todoNextId by 1.
     todos.push(body);
-    todoNextId +=1;
    
-   
-    res.json(todos);
+    res.json(body);
     })
         
-    
-    
-
-
 app.listen(port, function(){
     console.log('express listening on port: '+ port + "!");
 })
