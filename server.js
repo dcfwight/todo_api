@@ -34,6 +34,7 @@ var todos = [{
 
 app.get('/', function(req,res){
     res.send('Todo API root');
+    console.log('root folder hit');
 });
 
 // get request - http method.
@@ -57,8 +58,8 @@ app.get('/todos', function(req,res) {
     //"Go to work on Saturday".indexOf('work') - will return -1 if it doesn't exist, some number if it does exist..
     if (queryParams.hasOwnProperty('q') && queryParams.q.length >0) {
         filteredTodos = _.filter(filteredTodos, function(todo){
-            return todo.description.indexOf(queryParams.q) > -1;
-        })
+            return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1;
+        });
     }
     res.json(filteredTodos);
 })
