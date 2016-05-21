@@ -6,8 +6,10 @@ var _ = require('underscore'); // access the underscore package - just use '_' -
 // in that list. e.g. _.where(listOfPlays, {author:'Shakespeare', year:1611});
 // findWhere returns just the first item.
 
+var db = require('./db.js');
+
 var app = express();
-var port = process.env.PORT || 3000;
+var PORT = process.env.PORT || 3000;
 // port environment variable set by heroku.
 var todos = []; // set up empty todos array.
 var todoNextId = 1;  //how we iterate over ids.
@@ -114,12 +116,21 @@ app.get('/todos/:id', function(req,res){
 
 // POST/todos
 app.post('/todos', function(req,res){
-    var body = req.body; // we needed the body-parser module to do this.
+    var body = _.pick(req.body, 'description', 'completed'); // we needed the body-parser to get the body, and underscore for the rest.
     // use underscore module to validate entries.
     
-    // challenge - use underscore pick to only pick description and completed.
-    body = _.pick(body, 'description', 'completed')
+    // challenge - use the new todo model. Call create on db.todo
+    // if success respond to API caller with 200 and the value of the todo object using .toJSON
+    // if fail, respond with e res.json(e) - res.status(400).json(e)
+    db.todo.create(body).then(function(todo){
+            res.json(todo.toJSON());
+        },function(e){
+            res.status(400).json(e);
+        });
     
+    
+    
+    /* All this code works - commented out for challenge at database stage.    
     // logic statement runs if the completed attribute is not a Boolean
     // also the description has to be a string. String also has to have > 0 length.
     // if any of the conditions fail, then a status error 400 is returned.
@@ -136,7 +147,8 @@ app.post('/todos', function(req,res){
     todos.push(body);
    
     res.json(body);
-    })
+    */
+    });
 
 // DELETE /todos/:id - call app.delete with 2 arguments, the URL and the second is a call back.
 // to delete item from an array - need to find the todo to remove. then use a new underscore method to remove
@@ -194,7 +206,11 @@ app.put('/todos/:id', function(req,res){
 });
 
 
+// db sequelize.sync is performing the same function as in basic-sequelize-database.js
+db.sequelize.sync().then(function(){
+    app.listen(PORT, function(){
+    console.log('express listening on port: '+ PORT + "!");
+    })
+});
 
-app.listen(port, function(){
-    console.log('express listening on port: '+ port + "!");
-})
+    
