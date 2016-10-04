@@ -16,7 +16,7 @@ var todoNextId = 1;  //how we iterate over ids.
 
 app.use(bodyParser.json());// now any time a JSON req comes in, express is going to be able to parse it, and access it via req.body.
 
-/* This was the old code -before we changed it so that we can add items to the todo array
+// This was the old code -before we changed it so that we can add items to the todo array
 var todos = [{
     id: 1,
     description: 'meet Dad for lunch',
@@ -29,9 +29,9 @@ var todos = [{
     id:3,
     description: 'have dinner',
     completed: true
-    }]*/
-// this is an array of objects. each needs to have an id. this is called a 'collection'
-// the 'model' is the individual item within a collection.
+    }]
+// this is an array of objects. each needs to have an id. the set is called a 'collection'
+// the 'model' is the individual item within a collection. So a collection is a set (array) of individual models.
 
 
 app.get('/', function(req,res){
@@ -63,17 +63,19 @@ app.get('/todos', function(req,res) {
             return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1;
         });
     }
-    res.json(filteredTodos);
+    res.json(filteredTodos); // res.json converts into json - i.e. no need for parsing / stringify.
 })
 
 // GET /todos/:id - this gets an individual item.
 // so this looks for the item id in the URL requested.(?)
-// it is saying 'take whatever is after the colon and pass it to req.params.
+// it is saying 'take whatever is AFTER THE COLON and pass it to req.params.
 
-/* this code works - just wanted to show different way of going through the loop.
+// this code works - just wanted to show different way of going through the loop.
+/*
 app.get('/todos/:id', function(req,res){
     var todo_id = req.params.id;
-    
+    //console.log(req.params);
+    //res.send('Asking for todo with id of ' + req.params.id);
     // iterate over todos array. Find the match.
     // if it doesn't find it, send a (404)status update
     var match = false;
@@ -84,10 +86,12 @@ app.get('/todos/:id', function(req,res){
         }
     }
     if (!match) {
-        res.status(404).send;
+        res.status(404).send('ID NOT FOUND');
     }
 })
 */
+// you can send the status message before the actual respsone
+// note if you send a response, there is automatically a status 200 attached to it.
 
 // alternative way of doing the above
 // note we needed to use parseInt, because req.params is always a string. parseInt second argument is the base - set to 10 usually.
@@ -107,7 +111,7 @@ app.get('/todos/:id', function(req,res){
     if (matchedTodo) {
         res.json(matchedTodo);
     } else {
-        res.status(404).send();
+        res.status(404).send('No ID found with ID of ' + todo_id);
     }
 })
     
