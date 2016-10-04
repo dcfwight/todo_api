@@ -6,7 +6,7 @@ var _ = require('underscore'); // access the underscore package - just use '_' -
 // in that list. e.g. _.where(listOfPlays, {author:'Shakespeare', year:1611});
 // findWhere returns just the first item.
 
-var db = require('./db.js');
+var db = require('./db.js'); // this requires the db.js file. Creates the sqllite database, then loads a model from models/todo.js. Check out db.js to see how.
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -135,12 +135,10 @@ app.post('/todos', function(req, res) {
     // if success respond to API caller with 200 and the value of the todo object using .toJSON
     // if fail, respond with e res.json(e) - res.status(400).json(e)
     db.todo.create(body).then(function(todo) {
-        res.json(todo.toJSON());
+        res.json(todo.toJSON()); // you do the .toJSON as there are a lot of other attributes you don't really want to see
     }, function(e) {
         res.status(400).json(e);
     });
-
-
 
     /* All this code works - commented out for challenge at database stage.    
     // logic statement runs if the completed attribute is not a Boolean

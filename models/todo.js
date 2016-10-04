@@ -4,14 +4,14 @@
 module.exports = function(sequelize, DataTypes){
     return sequelize.define('todo', {
         description: {
-            type:DataTypes.STRING,
+            type:DataTypes.STRING, // NOTE THE DIFFERENCE - it used to be Sequelize.STRING, now it's DataTypes.STRING
             allowNull: false, // this is  validation field - you HAVE to have a description
             validate: {
                 len: [1,255] // only valid if length is between 1 and 256.
             }
         },
         completed: {
-            type:DataTypes.BOOLEAN,
+            type:DataTypes.BOOLEAN, // same datatypes comment as above.
             defaultValue: false,
             allowNull: false
         }
