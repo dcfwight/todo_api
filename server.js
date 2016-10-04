@@ -12,11 +12,12 @@ var app = express();
 var PORT = process.env.PORT || 3000;
 // port environment variable set by heroku, if running on heroku. If not (i.e. run local)- set to 3000.
 var todos = []; // set up empty todos array.
-var todoNextId = 1;  //how we iterate over ids.
+var todoNextId = 1; //how we iterate over ids. It is NOT secure, it is just used to demonstrate here.
 
-app.use(bodyParser.json());// now any time a JSON req comes in, express is going to be able to parse it, and access it via req.body.
+app.use(bodyParser.json()); // now any time a JSON req comes in, express is going to be able to parse it, and access it via req.body.
 
 // This was the old code -before we changed it so that we can add items to the todo array
+/*
 var todos = [{
     id: 1,
     description: 'meet Dad for lunch',
@@ -32,9 +33,10 @@ var todos = [{
     }]
 // this is an array of objects. each needs to have an id. the set is called a 'collection'
 // the 'model' is the individual item within a collection. So a collection is a set (array) of individual models.
+*/
 
 
-app.get('/', function(req,res){
+app.get('/', function(req, res) {
     res.send('Todo API root');
     console.log('root folder hit');
 });
@@ -43,23 +45,27 @@ app.get('/', function(req,res){
 // GET /todos - this gets the collection
 // Get /todos?completed=true&q=house. i.e. we are searching for a string that has 'house' in it. We need _.filter() - returns an array of items that
 // pass a filter test.
-app.get('/todos', function(req,res) {
-    var queryParams = req.query; // this is the API request with a query?. Compare to request.params, which is the paramaters.
+app.get('/todos', function(req, res) {
+    var queryParams = req.query; // this is the API request with a query?. Compare to request.params, which is the parameters.
     var filteredTodos = todos;
-    
+
     // if hasProperty and completed === 'true'
     // filteredTodos = _.where(filteredTodos, ?)
     // else ifhasPoperty and completed is 'false'
     //NOTICE the difference between 'true' in the query parameters - these are always strings. But in the todo list, it is a Boolean.
-    if (queryParams.hasOwnProperty('completed') && queryParams.completed ==='true') {
-       filteredTodos =  _.where(filteredTodos, {completed: true});
-    } else if (queryParams.hasOwnProperty('completed') && queryParams.completed ==='false') {
-       filteredTodos =  _.where(filteredTodos, {completed: false});
+    if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
+        filteredTodos = _.where(filteredTodos, {
+            completed: true
+        });
+    } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
+        filteredTodos = _.where(filteredTodos, {
+            completed: false
+        });
     }
-    
+
     //"Go to work on Saturday".indexOf('work') - will return -1 if it doesn't exist, some number if it does exist..
-    if (queryParams.hasOwnProperty('q') && queryParams.q.length >0) {
-        filteredTodos = _.filter(filteredTodos, function(todo){
+    if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
+        filteredTodos = _.filter(filteredTodos, function(todo) {
             return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1;
         });
     }
@@ -95,10 +101,12 @@ app.get('/todos/:id', function(req,res){
 
 // alternative way of doing the above
 // note we needed to use parseInt, because req.params is always a string. parseInt second argument is the base - set to 10 usually.
-app.get('/todos/:id', function(req,res){
+app.get('/todos/:id', function(req, res) {
     var todo_id = parseInt(req.params.id, 10);
-    
-    var matchedTodo = _.findWhere(todos, {id:todo_id});
+
+    var matchedTodo = _.findWhere(todos, {
+        id: todo_id
+    });
     /* Code below works, but we now use the helper function from underscore.
     var matched;
     
@@ -114,26 +122,26 @@ app.get('/todos/:id', function(req,res){
         res.status(404).send('No ID found with ID of ' + todo_id);
     }
 })
-    
+
 // POST. This gets data in and updates variables.
 // you need the body-parser module for posts.
 
 // POST/todos
-app.post('/todos', function(req,res){
+app.post('/todos', function(req, res) {
     var body = _.pick(req.body, 'description', 'completed'); // we needed the body-parser to get the body, and underscore for the rest.
     // use underscore module to validate entries.
-    
+
     // challenge - use the new todo model. Call create on db.todo
     // if success respond to API caller with 200 and the value of the todo object using .toJSON
     // if fail, respond with e res.json(e) - res.status(400).json(e)
-    db.todo.create(body).then(function(todo){
-            res.json(todo.toJSON());
-        },function(e){
-            res.status(400).json(e);
-        });
-    
-    
-    
+    db.todo.create(body).then(function(todo) {
+        res.json(todo.toJSON());
+    }, function(e) {
+        res.status(400).json(e);
+    });
+
+
+
     /* All this code works - commented out for challenge at database stage.    
     // logic statement runs if the completed attribute is not a Boolean
     // also the description has to be a string. String also has to have > 0 length.
@@ -152,18 +160,22 @@ app.post('/todos', function(req,res){
    
     res.json(body);
     */
-    });
+});
 
 // DELETE /todos/:id - call app.delete with 2 arguments, the URL and the second is a call back.
 // to delete item from an array - need to find the todo to remove. then use a new underscore method to remove
 // without is the method. Send back a 200 status, and the deleted item.
-app.delete('/todos/:id', function(req,res){
-    var todo_id = parseInt(req.params.id, 10);
-    var matchedTodo = _.findWhere(todos, {id:todo_id});
-    
+app.delete('/todos/:id', function(req, res) {
+    var todo_id = parseInt(req.params.id, 10); // always need parseInt as the JSON comes in as strings.
+    var matchedTodo = _.findWhere(todos, {
+        id: todo_id
+    });
+
     if (!matchedTodo) {
-        res.status(404).json({"error":"no todo found with that id"});
-    } else{
+        res.status(404).json({
+            "error": "no todo found with that id"
+        });
+    } else {
         todos = _.without(todos, matchedTodo);
         res.json(matchedTodo); // you don't need to do res.status(200).send, as it does this automatically if
         // it successfully sends a JSON.
@@ -171,32 +183,36 @@ app.delete('/todos/:id', function(req,res){
 });
 
 // PUT /todos/:id
-app.put('/todos/:id', function(req,res){
+// PUTs update the information in your server/ database.
+app.put('/todos/:id', function(req, res) {
     var todo_id = parseInt(req.params.id, 10);
-    var matchedTodo = _.findWhere(todos, {id:todo_id});
+    var matchedTodo = _.findWhere(todos, {
+        id: todo_id
+    });
     var body = _.pick(req.body, 'description', 'completed');
     var validAttributes = {};
-    
+
     if (!matchedTodo) {
-        return res.status(404).send();
+        return res.status(404).send(); // use of return means that the code stops executing after this point if it is triggered.
     }
-    
+
     // returns true or false, if the object has the property completed.
     if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
         validAttributes.completed = body.completed;
     } else if (body.hasOwnProperty('completed')) {
         return res.status(400).send(); // there was a problem here - the completed attribute is not a Boolean.
+        // res.status(400) = 'bad request - the request could not be understood due to malformed syntax.
     } else {
         // never provided attribute - no problem here. Actually no need for this else clause..
     }
-    
+
     //challenge. check for description. property exists, and its a string and if trimmed value length >0.
     // elseif - just check if property exists.
-    if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length >0) {
+    if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
         validAttributes.description = body.description;
     } else if (body.hasOwnProperty('description')) {
         return res.status(400).send();
-    }    
+    }
     // HERE
     // use _.extend(destination, *sources) - takes all the properties in sources and writes them to destination. It will
     // overwrite the properties in destination of they are also in sources.
@@ -211,9 +227,9 @@ app.put('/todos/:id', function(req,res){
 
 
 // db sequelize.sync is performing the same function as in basic-sequelize-database.js
-db.sequelize.sync().then(function(){
-    app.listen(PORT, function(){
-    console.log('express listening on port: '+ PORT + "!");
+db.sequelize.sync().then(function() {
+    app.listen(PORT, function() {
+        console.log('express listening on port: ' + PORT + "!");
     })
 });
 
