@@ -103,11 +103,24 @@ app.get('/todos/:id', function(req,res){
 // note we needed to use parseInt, because req.params is always a string. parseInt second argument is the base - set to 10 usually.
 app.get('/todos/:id', function(req, res) {
     var todo_id = parseInt(req.params.id, 10);
-
+    db.todo.findById(todo_id)
+    .then(function(todo){
+        if (!!todo) { // the double !! means that it is not a Boolean, it will return true (i.e. if it is an object or a string)
+            res.json(todo.toJSON());
+        } else {
+            res.status(404).send();
+        }
+        
+    }, function(e) {
+        res.status(500).send();// 500 status means that something went wrong on the server end.
+    });
+    
+    
+    /* this code works, for static data. have commented out as we now start to use sequelize instead 
     var matchedTodo = _.findWhere(todos, {
         id: todo_id
     });
-    /* Code below works, but we now use the helper function from underscore.
+    // Code below works, but we now use the helper function from underscore.
     var matched;
     
     todos.forEach(function(todo){
@@ -115,13 +128,14 @@ app.get('/todos/:id', function(req, res) {
             matched = todo;
         }
     });
-    */
+    
     if (matchedTodo) {
         res.json(matchedTodo);
     } else {
         res.status(404).send('No ID found with ID of ' + todo_id);
     }
-})
+    */
+});
 
 // POST. This gets data in and updates variables.
 // you need the body-parser module for posts.
