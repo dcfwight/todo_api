@@ -10,7 +10,7 @@ var db = require('./db.js');
 
 var app = express();
 var PORT = process.env.PORT || 3000;
-// port environment variable set by heroku.
+// port environment variable set by heroku, if running on heroku. If not (i.e. run local)- set to 3000.
 var todos = []; // set up empty todos array.
 var todoNextId = 1;  //how we iterate over ids.
 
@@ -213,4 +213,5 @@ db.sequelize.sync().then(function(){
     })
 });
 
-    
+// app.listen starts the server, listening on the PORT. ONCE running, it then moves to the second argument which in this case
+// just logs to the console that the server is listening.
