@@ -179,6 +179,15 @@ app.get('/todos/:id', function(req, res) {
 // POST. This gets data in and updates variables.
 // you need the body-parser module for posts.
 
+
+app.post('/users', function (req, res){
+    var body = _.pick(req.body, 'email', 'password');
+    db.user.create(body).then(function(user){
+        res.json(user.toJSON());
+    }, function(e){
+        res.status(400).json(e);
+    })
+    });
 // POST/todos
 app.post('/todos', function(req, res) {
     var body = _.pick(req.body, 'description', 'completed'); // we needed the body-parser to get the body, and underscore for the rest.
