@@ -46,31 +46,70 @@ app.get('/', function(req, res) {
 // Get /todos?completed=true&q=house. i.e. we are searching for a string that has 'house' in it. We need _.filter() - returns an array of items that
 // pass a filter test.
 app.get('/todos', function(req, res) {
-    var queryParams = req.query; // this is the API request with a query?. Compare to request.params, which is the parameters.
-    var filteredTodos = todos;
+    var query = req.query; // this is the API request with a query?. Compare to request.params, which is the parameters.
+    var where = {};
+    
+    if (query.hasOwnProperty('completed') && query.completed === 'true')  {
+        where.completed = true;
+    } else if (query.hasOwnProperty('completed') && query.completed === 'false')  {
+        where.completed = false;
+    }
+    
+    if (query.hasOwnProperty('q') && query.q.length >0) {
+        where.description = {
+            $like: '%'+ query.q + '%';
+            };
+    }
+    
+    db.todo.findAll({
+        where: where
+        })
+    .then(function(todos){
+        if (todos) {
+            todos.forEach(function(todo){
+                console.log(todo.toJSON);
+            });
+            res.json(todos)
+        } else {
+            res.send('no todos found');
+        }
+    }, function(e) {
+        res.status(500).send();
+    }
+    ).catch(function(e){
+        console.log(e);
+    });
 
-    // if hasProperty and completed === 'true'
+    
+    // will need if statement to check if completed is true.
+    // check if there is a query and the length >0. 
+    
+    /*all this code works, but is for static data. Inserted new code to use sequelize*/
+    //var filteredTodos = todos;
+    //
+    ///* if hasProperty and completed === 'true'
     // filteredTodos = _.where(filteredTodos, ?)
     // else ifhasPoperty and completed is 'false'
     //NOTICE the difference between 'true' in the query parameters - these are always strings. But in the todo list, it is a Boolean.
-    if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
-        filteredTodos = _.where(filteredTodos, {
-            completed: true
-        });
-    } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
-        filteredTodos = _.where(filteredTodos, {
-            completed: false
-        });
-    }
-
-    //"Go to work on Saturday".indexOf('work') - will return -1 if it doesn't exist, some number if it does exist..
-    if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
-        filteredTodos = _.filter(filteredTodos, function(todo) {
-            return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1;
-        });
-    }
-    res.json(filteredTodos); // res.json converts into json - i.e. no need for parsing / stringify.
-})
+    //*/
+    //if (query.hasOwnProperty('completed') && query.completed === 'true') {
+    //    filteredTodos = _.where(filteredTodos, {
+    //        completed: true
+    //    });
+    //} else if (query.hasOwnProperty('completed') && query.completed === 'false') {
+    //    filteredTodos = _.where(filteredTodos, {
+    //        completed: false
+    //    });
+    //}
+    //
+    ////"Go to work on Saturday".indexOf('work') - will return -1 if it doesn't exist, some number if it does exist..
+    //if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
+    //    filteredTodos = _.filter(filteredTodos, function(todo) {
+    //        return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1;
+    //    });
+    //}
+    //res.json(filteredTodos); // res.json converts into json - i.e. no need for parsing / stringify.
+});
 
 // GET /todos/:id - this gets an individual item.
 // so this looks for the item id in the URL requested.(?)
