@@ -48,26 +48,26 @@ app.get('/', function(req, res) {
 app.get('/todos', function(req, res) {
     var query = req.query; // this is the API request with a query?. Compare to request.params, which is the parameters.
     var where = {};
-    
-    if (query.hasOwnProperty('completed') && query.completed === 'true')  {
+
+    if (query.hasOwnProperty('completed') && query.completed === 'true') {
         where.completed = true;
-    } else if (query.hasOwnProperty('completed') && query.completed === 'false')  {
+    } else if (query.hasOwnProperty('completed') && query.completed === 'false') {
         where.completed = false;
     }
-    
-    if (query.hasOwnProperty('q') && query.q.length >0) {
+
+    if (query.hasOwnProperty('q') && query.q.length > 0) {
         where.description = {
-            $like: '%'+ query.q + '%'
-            };
+            $like: '%' + query.q + '%'
+        };
     }
-    
+
     db.todo.findAll({
         where: where
-        })
-    .then(function(todos){
+    })
+        .then(function(todos) {
         if (todos) {
-            todos.forEach(function(todo){
-                console.log(todo.toJSON);
+            todos.forEach(function(todo) {
+                //console.log(todo.toJSON());
             });
             res.json(todos)
         } else {
@@ -75,15 +75,15 @@ app.get('/todos', function(req, res) {
         }
     }, function(e) {
         res.status(500).send();
-    }
-    ).catch(function(e){
+    }).
+    catch (function(e) {
         console.log(e);
     });
 
-    
+
     // will need if statement to check if completed is true.
     // check if there is a query and the length >0. 
-    
+
     /*all this code works, but is for static data. Inserted new code to use sequelize*/
     //var filteredTodos = todos;
     //
@@ -143,18 +143,18 @@ app.get('/todos/:id', function(req,res){
 app.get('/todos/:id', function(req, res) {
     var todo_id = parseInt(req.params.id, 10);
     db.todo.findById(todo_id)
-    .then(function(todo){
-        if (!!todo) { // the double !! means that it is not a Boolean, it will return true (i.e. if it is an object or a string)
+        .then(function(todo) {
+        if ( !! todo) { // the double !! means that it is not a Boolean, it will return true (i.e. if it is an object or a string)
             res.json(todo.toJSON());
         } else {
             res.status(404).send();
         }
-        
+
     }, function(e) {
-        res.status(500).send();// 500 status means that something went wrong on the server end.
+        res.status(500).send(); // 500 status means that something went wrong on the server end.
     });
-    
-    
+
+
     /* this code works, for static data. have commented out as we now start to use sequelize instead 
     var matchedTodo = _.findWhere(todos, {
         id: todo_id
@@ -218,28 +218,29 @@ app.post('/todos', function(req, res) {
 // without is the method. Send back a 200 status, and the deleted item.
 app.delete('/todos/:id', function(req, res) {
     var todo_id = parseInt(req.params.id, 10); // always need parseInt as the JSON comes in as strings.
-    
+
     db.todo.destroy({
-            where: {
-                id: todo_id
-            }
-        }).then(function(rows_deleted){
-            if (rows_deleted ===0) {
-                console.log('no rows deleted');
-                res.status(404).json({
-                    error:'No todo with ID'
-                    });
-            } else {
-                res.status(204).send(); // 204 status means that it went well (same as 200), but no data to send back.
-            }
-    }, function(e){
+        where: {
+            id: todo_id
+        }
+    }).then(function(rows_deleted) {
+        if (rows_deleted === 0) {
+            console.log('no rows deleted');
+            res.status(404).json({
+                error: 'No todo with ID'
+            });
+        } else {
+            res.status(204).send(); // 204 status means that it went well (same as 200), but no data to send back.
+        }
+    }, function(e) {
         res.status(500).send();
-    }).catch(function(e){
+    }).
+    catch (function(e) {
         console.log(e);
-        res.status(404).send('no todo found with id: '+todo_id);
+        res.status(404).send('no todo found with id: ' + todo_id);
     })
-    
-    
+
+
     /* the following code works, but it is for static data - before we updated the code for sequelize.*/
     //var matchedTodo = _.findWhere(todos, {
     //    id: todo_id
@@ -260,42 +261,70 @@ app.delete('/todos/:id', function(req, res) {
 // PUTs update the information in your server/ database.
 app.put('/todos/:id', function(req, res) {
     var todo_id = parseInt(req.params.id, 10);
-    var matchedTodo = _.findWhere(todos, {
-        id: todo_id
-    });
+
     var body = _.pick(req.body, 'description', 'completed');
-    var validAttributes = {};
+    //var validAttributes = {};
+    var attributes = {};
 
-    if (!matchedTodo) {
-        return res.status(404).send(); // use of return means that the code stops executing after this point if it is triggered.
+    /* code works for static data - now using sequelize */
+    //var matchedTodo = _.findWhere(todos, {
+    //    id: todo_id
+    //});
+    //
+    //if (!matchedTodo) {
+    //    return res.status(404).send(); // use of return means that the code stops executing after this point if it is triggered.
+    //}
+
+    /* updated the code for sequelize. Note we don't need the second validation (boolean, length etc, as they are built into the sequelize model)*/
+    if (body.hasOwnProperty('completed')) {
+        attributes.completed = body.completed;
     }
 
-    // returns true or false, if the object has the property completed.
-    if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
-        validAttributes.completed = body.completed;
-    } else if (body.hasOwnProperty('completed')) {
-        return res.status(400).send(); // there was a problem here - the completed attribute is not a Boolean.
-        // res.status(400) = 'bad request - the request could not be understood due to malformed syntax.
-    } else {
-        // never provided attribute - no problem here. Actually no need for this else clause..
+    if (body.hasOwnProperty('description')) {
+        attributes.description = body.description;
     }
+
+    db.todo.findById(todo_id).then(function(todo) {
+        if (todo) {
+            todo.update(attributes) // this tries to update the specific model with the attributes - note that they may not pass validation.
+            .then(function(todo) {
+                res.json(todo.toJSON());
+            }, function(e) {
+                res.status(400).json(e);
+            })
+        } else {
+            res.status(404).send();
+        }
+    }, function() {
+        res.status(500).send();
+    })
+
+    // returns true or false, if the object has the property completed. (note -when we move to sequelize, it validates data, so don't need it here.)
+    //if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
+    //    validAttributes.completed = body.completed;
+    //} else if (body.hasOwnProperty('completed')) {
+    //    return res.status(400).send(); // there was a problem here - the completed attribute is not a Boolean.
+    //    // res.status(400) = 'bad request - the request could not be understood due to malformed syntax.
+    //} else {
+    //    // never provided attribute - no problem here. Actually no need for this else clause..
+    //}
 
     //challenge. check for description. property exists, and its a string and if trimmed value length >0.
     // elseif - just check if property exists.
-    if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
-        validAttributes.description = body.description;
-    } else if (body.hasOwnProperty('description')) {
-        return res.status(400).send();
-    }
+    //if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
+    //    validAttributes.description = body.description;
+    //} else if (body.hasOwnProperty('description')) {
+    //    return res.status(400).send();
+    //}
     // HERE
     // use _.extend(destination, *sources) - takes all the properties in sources and writes them to destination. It will
     // overwrite the properties in destination of they are also in sources.
 
     //matchedTodo = _.extend(matchedTodo, validAttributes);
     // you actually don't need to do that - you can just do the following:
-    _.extend(matchedTodo, validAttributes); // as you pass in the original matchedTodo, and then do something to it,
+    //_.extend(matchedTodo, validAttributes); // as you pass in the original matchedTodo, and then do something to it,
     // it then returns the matchedTodo array.
-    res.json(matchedTodo); // automatically sends back status 200 as well.
+    //res.json(matchedTodo); // automatically sends back status 200 as well.
 
 });
 
