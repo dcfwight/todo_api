@@ -218,19 +218,42 @@ app.post('/todos', function(req, res) {
 // without is the method. Send back a 200 status, and the deleted item.
 app.delete('/todos/:id', function(req, res) {
     var todo_id = parseInt(req.params.id, 10); // always need parseInt as the JSON comes in as strings.
-    var matchedTodo = _.findWhere(todos, {
-        id: todo_id
-    });
-
-    if (!matchedTodo) {
-        res.status(404).json({
-            "error": "no todo found with that id"
-        });
-    } else {
-        todos = _.without(todos, matchedTodo);
-        res.json(matchedTodo); // you don't need to do res.status(200).send, as it does this automatically if
-        // it successfully sends a JSON.
-    }
+    
+    db.todo.destroy({
+            where: {
+                id: todo_id
+            }
+        }).then(function(rows_deleted){
+            if (rows_deleted ===0) {
+                console.log('no rows deleted');
+                res.status(404).json({
+                    error:'No todo with ID'
+                    });
+            } else {
+                res.status(204).send(); // 204 status means that it went well (same as 200), but no data to send back.
+            }
+    }, function(e){
+        res.status(500).send();
+    }).catch(function(e){
+        console.log(e);
+        res.status(404).send('no todo found with id: '+todo_id);
+    })
+    
+    
+    /* the following code works, but it is for static data - before we updated the code for sequelize.*/
+    //var matchedTodo = _.findWhere(todos, {
+    //    id: todo_id
+    //});
+    //
+    //if (!matchedTodo) {
+    //    res.status(404).json({
+    //        "error": "no todo found with that id"
+    //    });
+    //} else {
+    //    todos = _.without(todos, matchedTodo);
+    //    res.json(matchedTodo); // you don't need to do res.status(200).send, as it does this automatically if
+    //    // it successfully sends a JSON.
+    //}
 });
 
 // PUT /todos/:id
