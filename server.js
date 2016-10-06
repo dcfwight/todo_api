@@ -198,7 +198,13 @@ app.post('/users/login', function(req, res) {
     var body = _.pick(req.body, 'email', 'password');
     
     db.user.authenticate(body).then(function(user){
-        res.json(user.toPublicJSON());
+        var token = user.generateToken('authentication');
+        if (token) {
+            res.header('Auth', token).json(user.toPublicJSON());
+            // note we are chaining here. Response sends a header, with two arguments - key and value. For value, check out user.js instancemethod generateToken.
+        } else {
+            res.status(401).send();
+        }
     }, function(e){
         res.status(401).send(); // send a vague error message for security features like this.
     })
