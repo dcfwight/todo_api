@@ -245,14 +245,28 @@ app.post('/todos', middleware.requireAuthentication, function(req, res) {
     var body = _.pick(req.body, 'description', 'completed'); // we needed the body-parser to get the body, and underscore for the rest.
     // use underscore module to validate entries.
 
-    // challenge - use the new todo model. Call create on db.todo
-    // if success respond to API caller with 200 and the value of the todo object using .toJSON
-    // if fail, respond with e res.json(e) - res.status(400).json(e)
-    db.todo.create(body).then(function(todo) {
-        res.json(todo.toJSON()); // you do the .toJSON as there are a lot of other attributes you don't really want to see
-    }, function(e) {
-        res.status(400).json(e);
-    });
+    // this next section is associating a todo with a user. The req.user has the user details (see middleware.js to see how it was added)
+    // so you create the todo, then you add it to the user (see associations / one to many). We then need to reload the todo (as it has been amended)
+    // that is then sent back via response.
+    if (typeof body.description !== 'string') {
+        res.status(400).send();
+    } else {
+    
+        db.todo.create(body).then(function(todo) {
+            req.user.addTodo(todo).then(function(){
+                return todo.reload();
+            }).then(function(todo){
+                res.json(todo.toJSON());
+            });
+            // challenge - use the new todo model. Call create on db.todo
+            // if success respond to API caller with 200 and the value of the todo object using .toJSON
+            // if fail, respond with e res.json(e) - res.status(400).json(e)
+            
+            //res.json(todo.toJSON()); // you do the .toJSON as there are a lot of other attributes you don't really want to see
+        }, function(e) {
+            res.status(400).json(e);
+        });
+    }
 
     /* All this code works - commented out for challenge at database stage.    
     // logic statement runs if the completed attribute is not a Boolean

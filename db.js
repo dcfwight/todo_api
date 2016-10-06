@@ -31,5 +31,9 @@ db.user = sequelize.import(__dirname + "/models/user.js");
 db.sequelize = sequelize; // set it to the sequelize instance
 db.Sequelize = Sequelize; // set it to the sequelize library
 
+// we need to set these up for the one to many associations.
+db.todo.belongsTo(db.user); // this means that the todos will belong to a user
+db.user.hasMany(db.todo); // this means a user has many todos
+
 // then it exports to any program that requires this file.
 module.exports = db;

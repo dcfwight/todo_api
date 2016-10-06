@@ -17,7 +17,7 @@ module.exports = function(sequelize, DataTypes) {
             allowNull: false,
             defaultValue: false
         }
-    }, {
+    } /*, {
         validate: {
             descriptionIsString: function() {
                 if (!_.isString(this.description)) {
@@ -30,5 +30,6 @@ module.exports = function(sequelize, DataTypes) {
                 }
             }
         }
-    });
+    } */
+    );
 };
