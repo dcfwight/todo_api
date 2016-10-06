@@ -7,7 +7,11 @@ var _ = require('underscore'); // access the underscore package - just use '_' -
 // findWhere returns just the first item.
 var bcrypt = require('bcryptjs');
 
+
 var db = require('./db.js'); // this requires the db.js file. Creates the sqllite database, then loads a model from models/todo.js. Check out db.js to see how.
+var middleware = require('./middleware.js')(db);// if you look at middleware.js, it is a function, which accepts one argument - a database.
+// so we can pass in the database right away!
+
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -46,7 +50,7 @@ app.get('/', function(req, res) {
 // GET /todos - this gets the collection
 // Get /todos?completed=true&q=house. i.e. we are searching for a string that has 'house' in it. We need _.filter() - returns an array of items that
 // pass a filter test.
-app.get('/todos', function(req, res) {
+app.get('/todos', middleware.requireAuthentication, function(req, res) {
     var query = req.query; // this is the API request with a query?. Compare to request.params, which is the parameters.
     var where = {};
 
@@ -141,7 +145,7 @@ app.get('/todos/:id', function(req,res){
 
 // alternative way of doing the above
 // note we needed to use parseInt, because req.params is always a string. parseInt second argument is the base - set to 10 usually.
-app.get('/todos/:id', function(req, res) {
+app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
     var todo_id = parseInt(req.params.id, 10);
     db.todo.findById(todo_id)
         .then(function(todo) {
@@ -237,7 +241,7 @@ app.post('/users/login', function(req, res) {
 })
 
 // POST/todos
-app.post('/todos', function(req, res) {
+app.post('/todos', middleware.requireAuthentication, function(req, res) {
     var body = _.pick(req.body, 'description', 'completed'); // we needed the body-parser to get the body, and underscore for the rest.
     // use underscore module to validate entries.
 
