@@ -5,6 +5,7 @@ var _ = require('underscore'); // access the underscore package - just use '_' -
 // for example the where function _.where(list, properties), will return an array of ALL the values that contain all of the key-value pairs
 // in that list. e.g. _.where(listOfPlays, {author:'Shakespeare', year:1611});
 // findWhere returns just the first item.
+var bcrypt = require('bcryptjs');
 
 var db = require('./db.js'); // this requires the db.js file. Creates the sqllite database, then loads a model from models/todo.js. Check out db.js to see how.
 
@@ -180,14 +181,55 @@ app.get('/todos/:id', function(req, res) {
 // you need the body-parser module for posts.
 
 
-app.post('/users', function (req, res){
+app.post('/users', function(req, res) {
     var body = _.pick(req.body, 'email', 'password');
-    db.user.create(body).then(function(user){
-        res.json(user.toJSON());
-    }, function(e){
+    db.user.create(body).then(function(user) {
+        res.json(user.toPublicJSON());
+    }, function(e) {
         res.status(400).json(e);
     })
-    });
+});
+
+// POST /users/login
+// create handler for this request.
+// pick off email and password. Check if req.body.email and password are strings (basic validation)
+// if everything fine, send back req.body to initial caller.
+app.post('/users/login', function(req, res) {
+    var body = _.pick(req.body, 'email', 'password');
+    
+    db.user.authenticate(body).then(function(user){
+        res.json(user.toPublicJSON());
+    }, function(e){
+        res.status(401).send(); // send a vague error message for security features like this.
+    })
+    
+    // all the code below works, we have just factored it away to the user.js classMethods
+    //if (!_.isString(body.email) || !_.isString(body.password)) {
+    //    return res.status(400).send();
+    //    // NOTE - instrcutor did the following if statement instead:
+    //    // if (typeof body.email !== 'string') || typeof body.password !== 'string)
+    //
+    //} else {
+    //    db.user.findOne({
+    //        where: {
+    //            email: body.email
+    //        }
+    //    }).then(function(user) {
+    //        if (!user || !bcrypt.compareSync(body.password, user.get('password_hash'))) {
+    //            // the bcrypt.compareSync function will compare passwords. Takes two arguments to compare against each other.
+    //            // user.get is simply getting the value for the attribute in the argument - in this case user.password_hash.
+    //            
+    //            return res.status(401).send(); // 401 means authentication is possible but fail - route exists, but for some reason it failed.
+    //        } else {
+    //            res.json(user.toPublicJSON());    
+    //        }
+    //        
+    //    }, function(e) {
+    //        return res.status(500).send();
+    //    })
+    //}
+})
+
 // POST/todos
 app.post('/todos', function(req, res) {
     var body = _.pick(req.body, 'description', 'completed'); // we needed the body-parser to get the body, and underscore for the rest.
@@ -339,7 +381,9 @@ app.put('/todos/:id', function(req, res) {
 
 
 // db sequelize.sync is performing the same function as in basic-sequelize-database.js
-db.sequelize.sync().then(function() {
+db.sequelize.sync({
+    force: true
+}).then(function() {
     app.listen(PORT, function() {
         console.log('express listening on port: ' + PORT + "!");
     })
