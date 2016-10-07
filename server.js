@@ -209,16 +209,28 @@ app.post('/users', function(req, res) {
 // if everything fine, send back req.body to initial caller.
 app.post('/users/login', function(req, res) {
     var body = _.pick(req.body, 'email', 'password');
+    var userInstance;
     
     db.user.authenticate(body).then(function(user){
         var token = user.generateToken('authentication');
-        if (token) {
-            res.header('Auth', token).json(user.toPublicJSON());
-            // note we are chaining here. Response sends a header, with two arguments - key and value. For value, check out user.js instancemethod generateToken.
-        } else {
-            res.status(401).send();
-        }
-    }, function(e){
+        // if we have found a user in the database that passes authentication (i.e. the email and password match), we want to then store the token in the dataabase.
+        userInstance = user;
+        
+        return db.token.create({
+            token: token, 
+        });
+        
+        // following code is obsolete after we have started storing tokens
+        //if (token) {
+        //    res.header('Auth', token).json(user.toPublicJSON());
+        //    // note we are chaining here. Response sends a header, with two arguments - key and value. For value, check out user.js instancemethod generateToken.
+        //} else {
+        //    res.status(401).send();
+        //}
+    }).then(function(tokenInstance){
+        res.header('Auth', tokenInstance.get('token')).json(userInstance.toPublicJSON());
+    
+    }).catch ( function(){
         res.status(401).send(); // send a vague error message for security features like this.
     })
     
@@ -248,6 +260,16 @@ app.post('/users/login', function(req, res) {
     //    })
     //}
 })
+
+// DELETE/users/login
+app.delete('/users/login/', middleware.requireAuthentication, function(req,res){
+    // this next code deletes the tokens from the headers, thus preventing further changes, unless the user logs in again.
+    req.token.destroy().then(function(){
+        res.status(204).send(); // 204 means server has successfully fulfilled the request - no data to send back.
+    }).catch(function(){
+        res.status(500).send(); // 500 means server error.
+    });
+});
 
 // POST/todos
 app.post('/todos', middleware.requireAuthentication, function(req, res) {
@@ -422,6 +444,7 @@ app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
 
 
 // db sequelize.sync is performing the same function as in basic-sequelize-database.js
+// NB the force: true wipes the database. This will clean all your data. It is important if you have changed the structure of the database, to do this
 db.sequelize.sync({
     force: true
 }).then(function() {
