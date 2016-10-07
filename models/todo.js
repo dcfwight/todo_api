@@ -17,19 +17,22 @@ module.exports = function(sequelize, DataTypes) {
             allowNull: false,
             defaultValue: false
         }
-    } /*, {
-        validate: {
-            descriptionIsString: function() {
-                if (!_.isString(this.description)) {
-                    throw new Error('Description must be string.')
-                }
-            },
-            completedIsBoolean: function() {
-                if (!_.isBoolean(this.completed)) {
-                    throw new Error('Completed must be boolean.')
-                }
-            }
-        }
-    } */
+    }
+    // this code did work to validate that description had to be string, but then it fouled up with the association code from 9/81.
+    // so instead, 
+    //, {
+    //    validate: {
+    //        descriptionIsString: function() {
+    //            if (!_.isString(this.description)) {
+    //                throw new Error('Description must be string.')
+    //            }
+    //        },
+    //        completedIsBoolean: function() {
+    //            if (!_.isBoolean(this.completed)) {
+    //                throw new Error('Completed must be boolean.')
+    //            }
+    //        }
+    //    }
+    //} 
     );
 };

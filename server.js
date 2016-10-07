@@ -52,7 +52,10 @@ app.get('/', function(req, res) {
 // pass a filter test.
 app.get('/todos', middleware.requireAuthentication, function(req, res) {
     var query = req.query; // this is the API request with a query?. Compare to request.params, which is the parameters.
-    var where = {};
+    // following code checks that the userId in the header (req.user.get('id') matches to the userId in the database, when we do findAll down below)
+    var where = {
+        userId: req.user.get('id')
+        };
 
     if (query.hasOwnProperty('completed') && query.completed === 'true') {
         where.completed = true;
@@ -146,8 +149,14 @@ app.get('/todos/:id', function(req,res){
 // alternative way of doing the above
 // note we needed to use parseInt, because req.params is always a string. parseInt second argument is the base - set to 10 usually.
 app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
-    var todo_id = parseInt(req.params.id, 10);
-    db.todo.findById(todo_id)
+    var todoId = parseInt(req.params.id, 10);
+    // where sets up the filter function - the todoId has to be passed in, and the user ID in the header (req.user.get('id') has to match what was stored in the database)
+    var where = {
+        id: todoId,
+        userId: req.user.get('id')
+    }
+    
+    db.todo.findOne({where: where})
         .then(function(todo) {
         if ( !! todo) { // the double !! means that it is not a Boolean, it will return true (i.e. if it is an object or a string)
             res.json(todo.toJSON());
@@ -162,13 +171,13 @@ app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
 
     /* this code works, for static data. have commented out as we now start to use sequelize instead 
     var matchedTodo = _.findWhere(todos, {
-        id: todo_id
+        id: todoId
     });
     // Code below works, but we now use the helper function from underscore.
     var matched;
     
     todos.forEach(function(todo){
-        if (todo.id === todo_id) {
+        if (todo.id === todoId) {
             matched = todo;
         }
     });
@@ -176,7 +185,7 @@ app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
     if (matchedTodo) {
         res.json(matchedTodo);
     } else {
-        res.status(404).send('No ID found with ID of ' + todo_id);
+        res.status(404).send('No ID found with ID of ' + todoId);
     }
     */
 });
@@ -291,14 +300,15 @@ app.post('/todos', middleware.requireAuthentication, function(req, res) {
 // DELETE /todos/:id - call app.delete with 2 arguments, the URL and the second is a call back.
 // to delete item from an array - need to find the todo to remove. then use a new underscore method to remove
 // without is the method. Send back a 200 status, and the deleted item.
-app.delete('/todos/:id', function(req, res) {
+app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
     var todo_id = parseInt(req.params.id, 10); // always need parseInt as the JSON comes in as strings.
-
-    db.todo.destroy({
-        where: {
-            id: todo_id
-        }
-    }).then(function(rows_deleted) {
+    // where is the filter - todo_id is passed in by API, and the user's ID (req.user.get('id') has to match the userId in the database)
+    var where = {
+        id: todo_id,
+        userId: req.user.get('id')
+    }
+    
+    db.todo.destroy({where: where}).then(function(rows_deleted) {
         if (rows_deleted === 0) {
             console.log('no rows deleted');
             res.status(404).json({
@@ -334,13 +344,17 @@ app.delete('/todos/:id', function(req, res) {
 
 // PUT /todos/:id
 // PUTs update the information in your server/ database.
-app.put('/todos/:id', function(req, res) {
+app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
     var todo_id = parseInt(req.params.id, 10);
 
     var body = _.pick(req.body, 'description', 'completed');
     //var validAttributes = {};
     var attributes = {};
-
+    // set up filter - only adjust if userId in database matches the ID in the header (req.user.get('id'))
+    var where = {
+        id: todo_id,
+        userId: req.user.get('id')
+    }
     /* code works for static data - now using sequelize */
     //var matchedTodo = _.findWhere(todos, {
     //    id: todo_id
@@ -358,8 +372,11 @@ app.put('/todos/:id', function(req, res) {
     if (body.hasOwnProperty('description')) {
         attributes.description = body.description;
     }
-
-    db.todo.findById(todo_id).then(function(todo) {
+    
+    
+    
+    
+    db.todo.findOne({where: where}).then(function(todo) {
         if (todo) {
             todo.update(attributes) // this tries to update the specific model with the attributes - note that they may not pass validation.
             .then(function(todo) {
